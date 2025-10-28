@@ -1,0 +1,7 @@
+[Validation Issues Detected]
+
+Subject: 헌법
+  option_count_mismatches:
+[
+  16
+]

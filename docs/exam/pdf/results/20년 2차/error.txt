@@ -1,0 +1,27 @@
+[Validation Issues Detected]
+
+Subject: 경찰학개론
+  option_count_mismatches:
+[
+  18,
+  19,
+  20
+]
+  option_index_gaps:
+{
+  "18": [
+    3,
+    4
+  ],
+  "19": [
+    1,
+    2
+  ]
+}
+
+Subject: 형법
+  duplicate_question_text_numbers:
+[
+  7,
+  9
+]

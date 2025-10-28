@@ -1,0 +1,89 @@
+[Validation Issues Detected]
+
+Subject: 헌법
+  option_count_mismatches:
+[
+  3,
+  7,
+  18
+]
+  option_index_gaps:
+{
+  "18": [
+    3,
+    4
+  ]
+}
+
+Subject: 경찰학
+  duplicate_question_numbers:
+[
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20
+]
+  option_count_mismatches:
+[
+  14
+]
+  duplicate_question_text_numbers:
+[
+  1,
+  2,
+  3,
+  4,
+  5,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  22,
+  23,
+  27,
+  28,
+  30,
+  33,
+  34,
+  35,
+  39
+]
+
+Subject: 형사소송법
+  option_count_mismatches:
+[
+  19,
+  20
+]
+  option_index_gaps:
+{
+  "19": [
+    3,
+    4
+  ]
+}

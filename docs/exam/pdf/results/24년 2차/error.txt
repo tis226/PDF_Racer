@@ -1,0 +1,21 @@
+[Validation Issues Detected]
+
+Subject: 형사법
+  option_count_mismatches:
+[
+  28
+]
+
+Subject: 경찰학
+  option_count_mismatches:
+[
+  38,
+  40
+]
+  option_index_gaps:
+{
+  "38": [
+    3,
+    4
+  ]
+}
