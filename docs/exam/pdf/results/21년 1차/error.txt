@@ -1,7 +1,0 @@
-[Validation Issues Detected]
-
-Subject: 경찰학개론
-  option_count_mismatches:
-[
-  16
-]
