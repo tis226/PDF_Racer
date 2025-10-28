@@ -1,0 +1,36 @@
+page,detected_subject,current_subject,skip,action
+1,,,False,SKIP
+2,한국사,,True,RESET (non-target)
+3,,,True,SKIP
+4,,,True,SKIP
+5,영어,,True,RESET (non-target)
+6,,,True,SKIP
+7,,,True,SKIP
+8,형법,형법,False,ENTER 형법
+9,,형법,False,INHERIT 형법
+10,,형법,False,INHERIT 형법
+11,,형법,False,INHERIT 형법
+12,형사소송법,형사소송법,False,ENTER 형사소송법
+13,,형사소송법,False,INHERIT 형사소송법
+14,,형사소송법,False,INHERIT 형사소송법
+15,,형사소송법,False,INHERIT 형사소송법
+16,경찰학개론,경찰학개론,False,ENTER 경찰학개론
+17,,경찰학개론,False,INHERIT 경찰학개론
+18,,경찰학개론,False,INHERIT 경찰학개론
+19,국어,,True,RESET (non-target)
+20,,,True,SKIP
+21,,,True,SKIP
+22,수학,,True,RESET (non-target)
+23,,,True,SKIP
+24,사회,,True,RESET (non-target)
+25,,,True,SKIP
+26,,,True,SKIP
+27,과학,,True,RESET (non-target)
+28,,,True,SKIP
+29,,,True,SKIP
+30,수사,,True,RESET (non-target)
+31,,,True,SKIP
+32,,,True,SKIP
+33,행정법,,True,RESET (non-target)
+34,,,True,SKIP
+35,,,True,SKIP

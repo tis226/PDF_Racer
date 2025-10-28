@@ -1,0 +1,41 @@
+page,detected_subject,current_subject,skip,action
+1,,,False,SKIP
+2,헌법,헌법,False,ENTER 헌법
+3,,헌법,False,INHERIT 헌법
+4,,헌법,False,INHERIT 헌법
+5,,헌법,False,INHERIT 헌법
+6,형사법,형사법,False,ENTER 형사법
+7,,형사법,False,INHERIT 형사법
+8,,형사법,False,INHERIT 형사법
+9,,형사법,False,INHERIT 형사법
+10,,형사법,False,INHERIT 형사법
+11,,형사법,False,INHERIT 형사법
+12,,형사법,False,INHERIT 형사법
+13,경찰학,경찰학,False,ENTER 경찰학
+14,,경찰학,False,INHERIT 경찰학
+15,,경찰학,False,INHERIT 경찰학
+16,,경찰학,False,INHERIT 경찰학
+17,,경찰학,False,INHERIT 경찰학
+18,범죄학,,True,RESET (non-target)
+19,,,True,SKIP
+20,형법,형법,False,ENTER 형법
+21,,형법,False,INHERIT 형법
+22,,형법,False,INHERIT 형법
+23,형사소송법,형사소송법,False,ENTER 형사소송법
+24,,형사소송법,False,INHERIT 형사소송법
+25,,형사소송법,False,INHERIT 형사소송법
+26,,형사소송법,False,INHERIT 형사소송법
+27,경찰학,경찰학,False,ENTER 경찰학
+28,,경찰학,False,INHERIT 경찰학
+29,,경찰학,False,INHERIT 경찰학
+30,정보보호론,,True,RESET (non-target)
+31,,,True,SKIP
+32,,,True,SKIP
+33,시스템네트워크보안,,True,RESET (non-target)
+34,,,True,SKIP
+35,데이터베이스론,,True,RESET (non-target)
+36,,,True,SKIP
+37,정보보안관리및법규,,True,RESET (non-target)
+38,,,True,SKIP
+39,디지털포렌식개론,,True,RESET (non-target)
+40,,,True,SKIP
