@@ -666,7 +666,7 @@ OPT_SPLIT_RE = re.compile(
     |
     (?P<num_rparen>[1-9]|1[0-9]|20)\)
     |
-    (?P<num_dot>[1-9]|1[0-9]|20)\.
+    (?P<num_dot>[1-9]|1[0-9]|20)\.(?!\d)
     """,
     re.VERBOSE,
 )
@@ -679,7 +679,7 @@ def split_inline_options(line_text: str):
         prefix = s[:m.start()]
         prefix = prefix.rstrip()
         prev_char = prefix[-1] if prefix else ''
-        if prev_char and (prev_char.isdigit() or prev_char == '.'):
+        if prev_char and (prev_char.isalnum() or prev_char in CIRCLED_CHOICE_CHARS or prev_char == '.'):
             continue
         matches.append(m)
     if not matches:
@@ -696,6 +696,9 @@ def split_inline_options(line_text: str):
             idx = m.group('num_dot')
         else:
             idx = m.group(0).strip()
+        ordinal = _choice_label_to_int(idx)
+        if ordinal is not None and ordinal > 5:
+            continue
         start = m.end()
         end = matches[i+1].start() if i+1 < len(matches) else len(s)
         body = s[start:end].strip()
@@ -849,6 +852,12 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
     question_last_page_index: Optional[int] = None
     incomplete_qas: List[Dict[str, Any]] = []
     backfill_state: Optional[Dict[str, Any]] = None
+    current_question_start_y: Optional[float] = None
+
+    def _looks_like_count_option(text: str) -> bool:
+        if not text:
+            return False
+        return bool(re.fullmatch(r"\d+\s*개", text))
 
     def flush_opt():
         nonlocal cur_opt, cur_txt, opts, cur_opt_column, cur_opt_y, opts_meta
@@ -887,7 +896,7 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
         return True
 
     def flush_q():
-        nonlocal qnum, qtxt, opts, qas, incomplete_qas, backfill_state, question_last_page_index, opts_meta
+        nonlocal qnum, qtxt, opts, qas, incomplete_qas, backfill_state, question_last_page_index, opts_meta, current_question_start_y
         if qnum:
             normalized_opts = [
                 {"index": opt.get("index"), "text": _clean_option_text(opt.get("text"))}
@@ -925,6 +934,7 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
         opts_meta = []
         backfill_state = None
         question_last_page_index = None
+        current_question_start_y = None
 
     i = 0
     while i < len(lines):
@@ -934,6 +944,10 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
         stripped = text.strip()
 
         m_q = QNUM_RE.match(stripped)
+        if m_q:
+            remainder = (m_q.group(2) or "").lstrip()
+            if remainder and re.match(r'^\d+\s*\.', remainder):
+                m_q = None
         parts = split_inline_options(text)
 
         if backfill_state:
@@ -956,6 +970,7 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
             qnum = int(m_q.group(1))
             qtxt = [m_q.group(2).strip()]
             question_last_page_index = line_page
+            current_question_start_y = getattr(raw, "y1", None)
             i += 1
             continue
 
@@ -984,12 +999,13 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
                     val = _choice_label_to_int(opt.get("index"))
                     if val:
                         current_ordinals.add(val)
-                if cur_opt:
-                    val = _choice_label_to_int(cur_opt)
-                    if val:
-                        current_ordinals.add(val)
+            if cur_opt:
+                val = _choice_label_to_int(cur_opt)
+                if val:
+                    current_ordinals.add(val)
             remaining_parts: List[Tuple[str, str]] = []
             for idx_label, body in parts:
+                cleaned_body = _clean_option_text(body)
                 ord_val = _choice_label_to_int(idx_label)
                 entry = None
                 if ord_val is not None:
@@ -1004,13 +1020,26 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
                 allow_backfill = False
                 entry_qnum = entry["qa"]["content"].get("question_number")
                 entry_page = entry.get("page_index")
+                line_y_top = getattr(raw, "y1", None)
                 if qnum is None:
                     allow_backfill = True
                 elif qnum is not None and entry_qnum == qnum:
                     allow_backfill = True
-                elif isinstance(entry_qnum, int) and entry_qnum < (qnum or entry_qnum):
-                    if entry_page is not None and line_page is not None and line_page > entry_page:
-                        allow_backfill = True
+                elif (
+                    isinstance(entry_qnum, int)
+                    and entry_page is not None
+                    and line_page is not None
+                    and line_page >= entry_page
+                    and (
+                        (
+                            current_question_start_y is not None
+                            and line_y_top is not None
+                            and line_y_top > current_question_start_y + 1.0
+                        )
+                        or _looks_like_count_option(cleaned_body)
+                    )
+                ):
+                    allow_backfill = True
                 if not allow_backfill:
                     remaining_parts.append((idx_label, body))
                     continue
@@ -1179,84 +1208,117 @@ def _summarize_subject_qas(
     include_subjects: Optional[Iterable[str]] = None,
 ) -> Dict[str, Dict[str, Any]]:
     summary: Dict[str, Dict[str, Any]] = {}
-    grouped: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    grouped: Dict[Tuple[str, str], List[Dict[str, Any]]] = defaultdict(list)
+    subject_target_order: Dict[str, List[str]] = defaultdict(list)
+
     for qa in qas:
-        grouped[qa.get("subject")].append(qa)
+        subj = qa.get("subject")
+        if not subj:
+            continue
+        target = qa.get("target") or "default"
+        key = (subj, target)
+        grouped[key].append(qa)
+        if target not in subject_target_order[subj]:
+            subject_target_order[subj].append(target)
 
-    subjects: Iterable[str]
-    if include_subjects is None:
-        subjects = grouped.keys()
+    include_subjects_set: Optional[set[str]] = None
+    if include_subjects is not None:
+        include_subjects_set = set(include_subjects)
+        for subj in include_subjects_set:
+            if subj not in subject_target_order:
+                subject_target_order[subj].append("default")
+                grouped[(subj, "default")] = []
+
+    subject_sequence: List[str]
+    if include_subjects is not None:
+        subject_sequence = [subj for subj in include_subjects if isinstance(subj, str)]
     else:
-        subjects = include_subjects
+        subject_sequence = sorted(subject_target_order.keys())
 
-    for subj in subjects:
-        items = grouped.get(subj, [])
-        question_numbers = [
-            qa.get("content", {}).get("question_number")
-            for qa in items
-            if isinstance(qa.get("content"), dict)
-        ]
-        number_counter = Counter(n for n in question_numbers if isinstance(n, int))
-        sorted_numbers = sorted(number_counter.keys())
-        max_number = max(sorted_numbers) if sorted_numbers else 0
-        expected_range = set(range(1, max_number + 1)) if max_number else set()
-        present_numbers = set(sorted_numbers)
-        missing_numbers = sorted(expected_range - present_numbers)
-        duplicate_numbers = sorted(n for n, c in number_counter.items() if c > 1)
-
-        option_count_issues: List[int] = []
-        blank_option_entries: List[int] = []
-        option_index_gaps: Dict[int, List[int]] = {}
-        duplicate_questions: List[int] = []
-
-        normalized_text_counter: Counter[str] = Counter()
-        normalized_text_to_numbers: Dict[str, List[int]] = defaultdict(list)
-
-        for qa in items:
-            content = qa.get("content") or {}
-            qnum = content.get("question_number")
-            options = content.get("options") or []
-            if len(options) != expected_choice_count and isinstance(qnum, int):
-                option_count_issues.append(qnum)
-
-            option_ints = [
-                _choice_label_to_int(opt.get("index"))
-                for opt in options
-                if isinstance(opt, dict)
+    for subj in subject_sequence:
+        targets = subject_target_order.get(subj, ["default"])
+        if include_subjects_set is not None and subj not in include_subjects_set:
+            continue
+        for target in targets:
+            if include_subjects_set is not None and subj not in include_subjects_set:
+                continue
+            items = grouped.get((subj, target), [])
+            question_numbers = [
+                qa.get("content", {}).get("question_number")
+                for qa in items
+                if isinstance(qa.get("content"), dict)
             ]
-            if isinstance(qnum, int):
-                missing_indices = sorted(
-                    n
-                    for n in range(1, expected_choice_count + 1)
-                    if n not in option_ints
+            number_counter = Counter(n for n in question_numbers if isinstance(n, int))
+            sorted_numbers = sorted(number_counter.keys())
+            max_number = max(sorted_numbers) if sorted_numbers else 0
+            expected_range = set(range(1, max_number + 1)) if max_number else set()
+            present_numbers = set(sorted_numbers)
+            missing_numbers = sorted(expected_range - present_numbers)
+            duplicate_numbers = sorted(n for n, c in number_counter.items() if c > 1)
+
+            option_count_issues: List[int] = []
+            blank_option_entries: List[int] = []
+            option_index_gaps: Dict[int, List[int]] = {}
+            duplicate_questions: List[int] = []
+
+            normalized_entry_counter: Counter[Tuple[str, Tuple[str, ...]]] = Counter()
+            normalized_entry_to_numbers: Dict[Tuple[str, Tuple[str, ...]], List[int]] = defaultdict(list)
+
+            for qa in items:
+                content = qa.get("content") or {}
+                qnum = content.get("question_number")
+                options = content.get("options") or []
+                if len(options) != expected_choice_count and isinstance(qnum, int):
+                    option_count_issues.append(qnum)
+
+                option_ints = [
+                    _choice_label_to_int(opt.get("index"))
+                    for opt in options
+                    if isinstance(opt, dict)
+                ]
+                if isinstance(qnum, int):
+                    missing_indices = sorted(
+                        n
+                        for n in range(1, expected_choice_count + 1)
+                        if n not in option_ints
+                    )
+                    if missing_indices:
+                        option_index_gaps[qnum] = missing_indices
+
+                if any(not (opt.get("text") or "").strip() for opt in options) and isinstance(qnum, int):
+                    blank_option_entries.append(qnum)
+
+                question_text = _clean_option_text(content.get("question_text"))
+                option_texts_tuple: Tuple[str, ...] = tuple(
+                    _clean_option_text(opt.get("text"))
+                    for opt in options
+                    if isinstance(opt, dict)
                 )
-                if missing_indices:
-                    option_index_gaps[qnum] = missing_indices
+                key = (question_text, option_texts_tuple)
+                normalized_entry_counter[key] += 1
+                normalized_entry_to_numbers[key].append(qnum)
 
-            if any(not (opt.get("text") or "").strip() for opt in options) and isinstance(qnum, int):
-                blank_option_entries.append(qnum)
+            for key, count in normalized_entry_counter.items():
+                if count > 1:
+                    nums = normalized_entry_to_numbers.get(key, [])
+                    duplicate_questions.extend(sorted(n for n in nums if isinstance(n, int)))
 
-            question_text = (content.get("question_text") or "").strip()
-            if question_text:
-                normalized_text_counter[question_text] += 1
-                normalized_text_to_numbers[question_text].append(qnum)
+            multiple_targets = len(subject_target_order.get(subj, [])) > 1
+            if target == "default" and not multiple_targets:
+                label = subj
+            else:
+                label = f"{subj} ({target})"
 
-        for text, count in normalized_text_counter.items():
-            if count > 1:
-                duplicate_questions.extend(
-                    sorted(n for n in normalized_text_to_numbers.get(text, []) if isinstance(n, int))
-                )
-
-        summary[subj] = {
-            "question_count": len(items),
-            "question_numbers": sorted_numbers,
-            "missing_question_numbers": missing_numbers,
-            "duplicate_question_numbers": duplicate_numbers,
-            "option_count_mismatches": sorted(option_count_issues),
-            "option_index_gaps": option_index_gaps,
-            "blank_option_entries": sorted(blank_option_entries),
-            "duplicate_question_text_numbers": sorted(set(duplicate_questions)),
-        }
+            summary[label] = {
+                "question_count": len(items),
+                "question_numbers": sorted_numbers,
+                "missing_question_numbers": missing_numbers,
+                "duplicate_question_numbers": duplicate_numbers,
+                "option_count_mismatches": sorted(option_count_issues),
+                "option_index_gaps": option_index_gaps,
+                "blank_option_entries": sorted(blank_option_entries),
+                "duplicate_question_text_numbers": sorted(set(duplicate_questions)),
+            }
 
     return summary
 
@@ -1275,13 +1337,19 @@ def extract_all_subjects_qa(
     current_subj, current_target, skip = None, None, False
     per_subject = {s: [] for s in TARGET_SUBJECTS}
     audit_rows = []
+    subject_default_counters: Dict[str, int] = defaultdict(int)
 
     for p in pages:
         pg = p["page_index"] + 1
         subj, target = p["subject"], p["target"]
         is_target = subj in TARGET_SUBJECTS
         if is_target:
-            current_subj, current_target, skip = subj, target, False
+            effective_target = target
+            if not effective_target:
+                subject_default_counters[subj] += 1
+                idx = subject_default_counters[subj]
+                effective_target = "default" if idx == 1 else f"default_variant{idx}"
+            current_subj, current_target, skip = subj, effective_target, False
             action = f"ENTER {subj}"
         elif subj is None:
             if skip or not current_subj:

@@ -1,0 +1,22 @@
+page,detected_subject,current_subject,skip,action
+1,,,False,SKIP
+2,헌법,헌법,False,ENTER 헌법
+3,,헌법,False,INHERIT 헌법
+4,,헌법,False,INHERIT 헌법
+5,,헌법,False,INHERIT 헌법
+6,형사법,형사법,False,ENTER 형사법
+7,,형사법,False,INHERIT 형사법
+8,,형사법,False,INHERIT 형사법
+9,,형사법,False,INHERIT 형사법
+10,,형사법,False,INHERIT 형사법
+11,,형사법,False,INHERIT 형사법
+12,,형사법,False,INHERIT 형사법
+13,경찰학,경찰학,False,ENTER 경찰학
+14,,경찰학,False,INHERIT 경찰학
+15,,경찰학,False,INHERIT 경찰학
+16,,경찰학,False,INHERIT 경찰학
+17,,경찰학,False,INHERIT 경찰학
+18,,경찰학,False,INHERIT 경찰학
+19,범죄학,,True,RESET (non-target)
+20,,,True,SKIP
+21,,,True,SKIP

@@ -1,0 +1,282 @@
+[
+  {
+    "page": 1,
+    "detected_subject": null,
+    "current_subject": null,
+    "skip": false,
+    "action": "SKIP"
+  },
+  {
+    "page": 2,
+    "detected_subject": "헌법",
+    "current_subject": "헌법",
+    "skip": false,
+    "action": "ENTER 헌법"
+  },
+  {
+    "page": 3,
+    "detected_subject": null,
+    "current_subject": "헌법",
+    "skip": false,
+    "action": "INHERIT 헌법"
+  },
+  {
+    "page": 4,
+    "detected_subject": null,
+    "current_subject": "헌법",
+    "skip": false,
+    "action": "INHERIT 헌법"
+  },
+  {
+    "page": 5,
+    "detected_subject": null,
+    "current_subject": "헌법",
+    "skip": false,
+    "action": "INHERIT 헌법"
+  },
+  {
+    "page": 6,
+    "detected_subject": "형사법",
+    "current_subject": "형사법",
+    "skip": false,
+    "action": "ENTER 형사법"
+  },
+  {
+    "page": 7,
+    "detected_subject": null,
+    "current_subject": "형사법",
+    "skip": false,
+    "action": "INHERIT 형사법"
+  },
+  {
+    "page": 8,
+    "detected_subject": null,
+    "current_subject": "형사법",
+    "skip": false,
+    "action": "INHERIT 형사법"
+  },
+  {
+    "page": 9,
+    "detected_subject": null,
+    "current_subject": "형사법",
+    "skip": false,
+    "action": "INHERIT 형사법"
+  },
+  {
+    "page": 10,
+    "detected_subject": null,
+    "current_subject": "형사법",
+    "skip": false,
+    "action": "INHERIT 형사법"
+  },
+  {
+    "page": 11,
+    "detected_subject": null,
+    "current_subject": "형사법",
+    "skip": false,
+    "action": "INHERIT 형사법"
+  },
+  {
+    "page": 12,
+    "detected_subject": null,
+    "current_subject": "형사법",
+    "skip": false,
+    "action": "INHERIT 형사법"
+  },
+  {
+    "page": 13,
+    "detected_subject": "경찰학",
+    "current_subject": "경찰학",
+    "skip": false,
+    "action": "ENTER 경찰학"
+  },
+  {
+    "page": 14,
+    "detected_subject": null,
+    "current_subject": "경찰학",
+    "skip": false,
+    "action": "INHERIT 경찰학"
+  },
+  {
+    "page": 15,
+    "detected_subject": null,
+    "current_subject": "경찰학",
+    "skip": false,
+    "action": "INHERIT 경찰학"
+  },
+  {
+    "page": 16,
+    "detected_subject": null,
+    "current_subject": "경찰학",
+    "skip": false,
+    "action": "INHERIT 경찰학"
+  },
+  {
+    "page": 17,
+    "detected_subject": null,
+    "current_subject": "경찰학",
+    "skip": false,
+    "action": "INHERIT 경찰학"
+  },
+  {
+    "page": 18,
+    "detected_subject": "범죄학",
+    "current_subject": null,
+    "skip": true,
+    "action": "RESET (non-target)"
+  },
+  {
+    "page": 19,
+    "detected_subject": null,
+    "current_subject": null,
+    "skip": true,
+    "action": "SKIP"
+  },
+  {
+    "page": 20,
+    "detected_subject": "형법",
+    "current_subject": "형법",
+    "skip": false,
+    "action": "ENTER 형법"
+  },
+  {
+    "page": 21,
+    "detected_subject": null,
+    "current_subject": "형법",
+    "skip": false,
+    "action": "INHERIT 형법"
+  },
+  {
+    "page": 22,
+    "detected_subject": null,
+    "current_subject": "형법",
+    "skip": false,
+    "action": "INHERIT 형법"
+  },
+  {
+    "page": 23,
+    "detected_subject": "형사소송법",
+    "current_subject": "형사소송법",
+    "skip": false,
+    "action": "ENTER 형사소송법"
+  },
+  {
+    "page": 24,
+    "detected_subject": null,
+    "current_subject": "형사소송법",
+    "skip": false,
+    "action": "INHERIT 형사소송법"
+  },
+  {
+    "page": 25,
+    "detected_subject": null,
+    "current_subject": "형사소송법",
+    "skip": false,
+    "action": "INHERIT 형사소송법"
+  },
+  {
+    "page": 26,
+    "detected_subject": null,
+    "current_subject": "형사소송법",
+    "skip": false,
+    "action": "INHERIT 형사소송법"
+  },
+  {
+    "page": 27,
+    "detected_subject": "경찰학",
+    "current_subject": "경찰학",
+    "skip": false,
+    "action": "ENTER 경찰학"
+  },
+  {
+    "page": 28,
+    "detected_subject": null,
+    "current_subject": "경찰학",
+    "skip": false,
+    "action": "INHERIT 경찰학"
+  },
+  {
+    "page": 29,
+    "detected_subject": null,
+    "current_subject": "경찰학",
+    "skip": false,
+    "action": "INHERIT 경찰학"
+  },
+  {
+    "page": 30,
+    "detected_subject": "정보보호론",
+    "current_subject": null,
+    "skip": true,
+    "action": "RESET (non-target)"
+  },
+  {
+    "page": 31,
+    "detected_subject": null,
+    "current_subject": null,
+    "skip": true,
+    "action": "SKIP"
+  },
+  {
+    "page": 32,
+    "detected_subject": null,
+    "current_subject": null,
+    "skip": true,
+    "action": "SKIP"
+  },
+  {
+    "page": 33,
+    "detected_subject": "시스템네트워크보안",
+    "current_subject": null,
+    "skip": true,
+    "action": "RESET (non-target)"
+  },
+  {
+    "page": 34,
+    "detected_subject": null,
+    "current_subject": null,
+    "skip": true,
+    "action": "SKIP"
+  },
+  {
+    "page": 35,
+    "detected_subject": "데이터베이스론",
+    "current_subject": null,
+    "skip": true,
+    "action": "RESET (non-target)"
+  },
+  {
+    "page": 36,
+    "detected_subject": null,
+    "current_subject": null,
+    "skip": true,
+    "action": "SKIP"
+  },
+  {
+    "page": 37,
+    "detected_subject": "정보보안관리및법규",
+    "current_subject": null,
+    "skip": true,
+    "action": "RESET (non-target)"
+  },
+  {
+    "page": 38,
+    "detected_subject": null,
+    "current_subject": null,
+    "skip": true,
+    "action": "SKIP"
+  },
+  {
+    "page": 39,
+    "detected_subject": "디지털포렌식개론",
+    "current_subject": null,
+    "skip": true,
+    "action": "RESET (non-target)"
+  },
+  {
+    "page": 40,
+    "detected_subject": null,
+    "current_subject": null,
+    "skip": true,
+    "action": "SKIP"
+  }
+]

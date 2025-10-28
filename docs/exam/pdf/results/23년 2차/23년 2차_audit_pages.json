@@ -1,0 +1,135 @@
+[
+  {
+    "page": 1,
+    "detected_subject": null,
+    "current_subject": null,
+    "skip": false,
+    "action": "SKIP"
+  },
+  {
+    "page": 2,
+    "detected_subject": "헌법",
+    "current_subject": "헌법",
+    "skip": false,
+    "action": "ENTER 헌법"
+  },
+  {
+    "page": 3,
+    "detected_subject": null,
+    "current_subject": "헌법",
+    "skip": false,
+    "action": "INHERIT 헌법"
+  },
+  {
+    "page": 4,
+    "detected_subject": null,
+    "current_subject": "헌법",
+    "skip": false,
+    "action": "INHERIT 헌법"
+  },
+  {
+    "page": 5,
+    "detected_subject": null,
+    "current_subject": "헌법",
+    "skip": false,
+    "action": "INHERIT 헌법"
+  },
+  {
+    "page": 6,
+    "detected_subject": "형사법",
+    "current_subject": "형사법",
+    "skip": false,
+    "action": "ENTER 형사법"
+  },
+  {
+    "page": 7,
+    "detected_subject": null,
+    "current_subject": "형사법",
+    "skip": false,
+    "action": "INHERIT 형사법"
+  },
+  {
+    "page": 8,
+    "detected_subject": null,
+    "current_subject": "형사법",
+    "skip": false,
+    "action": "INHERIT 형사법"
+  },
+  {
+    "page": 9,
+    "detected_subject": null,
+    "current_subject": "형사법",
+    "skip": false,
+    "action": "INHERIT 형사법"
+  },
+  {
+    "page": 10,
+    "detected_subject": null,
+    "current_subject": "형사법",
+    "skip": false,
+    "action": "INHERIT 형사법"
+  },
+  {
+    "page": 11,
+    "detected_subject": null,
+    "current_subject": "형사법",
+    "skip": false,
+    "action": "INHERIT 형사법"
+  },
+  {
+    "page": 12,
+    "detected_subject": null,
+    "current_subject": "형사법",
+    "skip": false,
+    "action": "INHERIT 형사법"
+  },
+  {
+    "page": 13,
+    "detected_subject": "경찰학",
+    "current_subject": "경찰학",
+    "skip": false,
+    "action": "ENTER 경찰학"
+  },
+  {
+    "page": 14,
+    "detected_subject": null,
+    "current_subject": "경찰학",
+    "skip": false,
+    "action": "INHERIT 경찰학"
+  },
+  {
+    "page": 15,
+    "detected_subject": null,
+    "current_subject": "경찰학",
+    "skip": false,
+    "action": "INHERIT 경찰학"
+  },
+  {
+    "page": 16,
+    "detected_subject": null,
+    "current_subject": "경찰학",
+    "skip": false,
+    "action": "INHERIT 경찰학"
+  },
+  {
+    "page": 17,
+    "detected_subject": null,
+    "current_subject": "경찰학",
+    "skip": false,
+    "action": "INHERIT 경찰학"
+  },
+  {
+    "page": 18,
+    "detected_subject": "범죄학",
+    "current_subject": null,
+    "skip": true,
+    "action": "RESET (non-target)"
+  },
+  {
+    "page": 19,
+    "detected_subject": null,
+    "current_subject": null,
+    "skip": true,
+    "action": "SKIP"
+  }
+]
