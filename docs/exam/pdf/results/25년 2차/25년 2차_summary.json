@@ -86,18 +86,8 @@
     ],
     "missing_question_numbers": [],
     "duplicate_question_numbers": [],
-    "option_count_mismatches": [
-      28,
-      36
-    ],
-    "option_index_gaps": {
-      "36": [
-        1,
-        2,
-        3,
-        4
-      ]
-    },
+    "option_count_mismatches": [],
+    "option_index_gaps": {},
     "blank_option_entries": [],
     "duplicate_question_text_numbers": []
   },

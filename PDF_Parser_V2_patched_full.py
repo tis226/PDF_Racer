@@ -287,6 +287,13 @@ def _collect_choice_ordinals(lines: Iterable[Line]) -> List[int]:
             continue
         if QNUM_RE.match(text):
             continue
+        parts = split_inline_options(text)
+        if parts:
+            for label, _ in parts:
+                idx = _choice_label_to_int(label)
+                if idx is not None:
+                    ordinals.append(idx)
+            continue
         if CIRCLED_CHOICE_RE.match(text):
             idx = _choice_label_to_int(text[0])
             if idx is not None:
@@ -525,20 +532,28 @@ def _merge_column_blocks(left_blocks: List[Dict[str, Any]], right_blocks: List[D
                 leftovers.append(blk)
                 continue
             blk_ordinals = _collect_choice_ordinals(blk["lines"])
+            filtered: List[Tuple[Dict[str, Any], List[int]]] = []
+            for cand in anchors:
+                cand_ordinals = _collect_choice_ordinals(cand["lines"])
+                if blk_ordinals and cand_ordinals and set(cand_ordinals) & set(blk_ordinals):
+                    continue
+                filtered.append((cand, cand_ordinals))
+            if not filtered:
+                leftovers.append(blk)
+                continue
             anchor = None
             if blk_ordinals:
                 blk_min = min(blk_ordinals)
                 sequential_candidates = []
                 blank_candidates = []
-                for cand in anchors:
-                    cand_ordinals = _collect_choice_ordinals(cand["lines"])
+                for cand, cand_ordinals in filtered:
                     if cand_ordinals and max(cand_ordinals) < blk_min:
                         sequential_candidates.append((abs(cand["top"] - blk["top"]), cand["top"], cand))
                     elif cand_ordinals == [] and cand.get("qnum"):
                         blank_candidates.append((cand["top"], cand))
                     elif cand_ordinals:
                         union = set(cand_ordinals) | set(blk_ordinals)
-                        if union and union == set(range(1, max(union) + 1)) and not (set(cand_ordinals) & set(blk_ordinals)):
+                        if union and union == set(range(1, max(union) + 1)):
                             # Candidate + block form a contiguous 1..N range with no overlap -> likely split options
                             sequential_candidates.append((abs(cand["top"] - blk["top"]), cand["top"], cand))
                 if sequential_candidates:
@@ -547,10 +562,10 @@ def _merge_column_blocks(left_blocks: List[Dict[str, Any]], right_blocks: List[D
                 elif blank_candidates:
                     anchor = min(blank_candidates, key=lambda item: item[0])[1]
             if anchor is None:
-                anchor = min(anchors, key=lambda b: abs(b["top"] - blk["top"]))
+                anchor = min((cand for cand, _ in filtered), key=lambda b: abs(b["top"] - blk["top"]))
             gap = abs(anchor["top"] - blk["top"])
             if prefer_last and gap > 220.0:
-                anchor = min(anchors, key=lambda b: b["top"])
+                anchor = min((cand for cand, _ in filtered), key=lambda b: b["top"])
                 gap = abs(anchor["top"] - blk["top"])
             elif gap > 220.0 and not blk_ordinals:
                 leftovers.append(blk)
@@ -898,10 +913,16 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
     def flush_q():
         nonlocal qnum, qtxt, opts, qas, incomplete_qas, backfill_state, question_last_page_index, opts_meta, current_question_start_y
         if qnum:
+            def _opt_sort_key(opt: Dict[str, Any]) -> Tuple[float, str]:
+                idx_label = opt.get("index")
+                ordinal = _choice_label_to_int(idx_label)
+                return (float("inf") if ordinal is None else ordinal, idx_label or "")
+
             normalized_opts = [
                 {"index": opt.get("index"), "text": _clean_option_text(opt.get("text"))}
                 for opt in _reshape_matrix_options(opts[:])
             ]
+            normalized_opts.sort(key=_opt_sort_key)
             raw_question_text = " ".join(qtxt)
             ordered_question_text = _order_labelled_clauses(raw_question_text)
             dispute_bool, dispute_site = _extract_dispute_flags(ordered_question_text)
