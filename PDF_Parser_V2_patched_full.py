@@ -289,7 +289,7 @@ def _collect_choice_ordinals(lines: Iterable[Line]) -> List[int]:
             continue
         parts = split_inline_options(text)
         if parts:
-            for label, _ in parts:
+            for label, _, _ in parts:
                 idx = _choice_label_to_int(label)
                 if idx is not None:
                     ordinals.append(idx)
@@ -686,39 +686,61 @@ OPT_SPLIT_RE = re.compile(
     re.VERBOSE,
 )
 
-def split_inline_options(line_text: str):
+def split_inline_options(line_text: str) -> List[Tuple[str, str, Optional[int]]]:
     s = (line_text or '').replace('\u00A0', ' ').strip()
     raw_matches = list(OPT_SPLIT_RE.finditer(s))
-    matches: List[re.Match[str]] = []
+    candidates: List[Tuple[re.Match[str], str, Optional[int]]] = []
     for m in raw_matches:
-        prefix = s[:m.start()]
-        prefix = prefix.rstrip()
-        prev_char = prefix[-1] if prefix else ''
-        if prev_char and (prev_char.isalnum() or prev_char in CIRCLED_CHOICE_CHARS or prev_char == '.'):
-            continue
-        matches.append(m)
-    if not matches:
-        return []
-    parts = []
-    for i, m in enumerate(matches):
+        prev_char = s[m.start() - 1] if m.start() > 0 else ''
+        if prev_char and not prev_char.isspace():
+            if prev_char.isalnum() or prev_char in CIRCLED_CHOICE_CHARS or prev_char in {'.', ')'}:
+                continue
         if m.group('circ'):
-            idx = m.group('circ')
+            idx_label = m.group('circ')
         elif m.group('num_paren'):
-            idx = m.group('num_paren')
+            idx_label = m.group('num_paren')
         elif m.group('num_rparen'):
-            idx = m.group('num_rparen')
+            idx_label = m.group('num_rparen')
         elif m.group('num_dot'):
-            idx = m.group('num_dot')
+            idx_label = m.group('num_dot')
         else:
-            idx = m.group(0).strip()
-        ordinal = _choice_label_to_int(idx)
+            idx_label = m.group(0).strip()
+        ordinal = _choice_label_to_int(idx_label)
+        candidates.append((m, idx_label, ordinal))
+    if not candidates:
+        return []
+    parts: List[Tuple[str, str, Optional[int]]] = []
+    for i, (m, idx, ordinal) in enumerate(candidates):
         if ordinal is not None and ordinal > 5:
             continue
         start = m.end()
-        end = matches[i+1].start() if i+1 < len(matches) else len(s)
+        end = len(s)
+        for j in range(i + 1, len(candidates)):
+            next_m, _, next_ord = candidates[j]
+            if next_ord is not None and next_ord > 5:
+                continue
+            end = next_m.start()
+            break
         body = s[start:end].strip()
-        parts.append((idx, body))
+        parts.append((idx, body, m.start()))
     return parts
+
+
+def _split_option_body_and_trailing_question(body: str) -> Tuple[str, Optional[str]]:
+    text = (body or "").replace("\u00A0", " ").strip()
+    if not text:
+        return "", None
+    match = re.search(r"(?:^|\s)(\d{1,3})\.(?!\d)", text)
+    if not match:
+        return text, None
+    start = match.start(1)
+    prefix = text[:start].rstrip()
+    remainder = text[start:].lstrip()
+    if not remainder:
+        return prefix, None
+    if not QNUM_RE.match(remainder):
+        return text, None
+    return prefix, remainder
 # --- end added ---
 
 
@@ -964,12 +986,41 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
         text = (raw.text if isinstance(raw, Line) else str(raw)) or ''
         stripped = text.strip()
 
+        parts: List[Tuple[str, str, Optional[int]]] = []
+        added_question_intro = False
+
         m_q = QNUM_RE.match(stripped)
         if m_q:
             remainder = (m_q.group(2) or "").lstrip()
             if remainder and re.match(r'^\d+\s*\.', remainder):
                 m_q = None
-        parts = split_inline_options(text)
+        if m_q:
+            flush_opt()
+            flush_q()
+            qnum = int(m_q.group(1))
+            remainder = (m_q.group(2) or "").lstrip()
+            remainder_clean = remainder.replace('\u00A0', ' ')
+            remainder_clean = re.sub(r'\s{2,}', ' ', remainder_clean).strip()
+            inline_parts = split_inline_options(remainder_clean)
+            first_anchor_pos: Optional[int] = None
+            for _, _, pos in inline_parts:
+                if pos is None:
+                    continue
+                if first_anchor_pos is None or pos < first_anchor_pos:
+                    first_anchor_pos = pos
+            question_intro = remainder_clean
+            if first_anchor_pos is not None:
+                question_intro = question_intro[:first_anchor_pos].strip()
+            if question_intro:
+                qtxt = [question_intro]
+            else:
+                qtxt = []
+            added_question_intro = True
+            parts = inline_parts
+            question_last_page_index = line_page
+            current_question_start_y = getattr(raw, "y1", None)
+        else:
+            parts = split_inline_options(text)
 
         if backfill_state:
             if m_q or parts:
@@ -986,12 +1037,7 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
                 continue
 
         # 1) Detect start of a new question
-        if m_q:
-            flush_opt(); flush_q()
-            qnum = int(m_q.group(1))
-            qtxt = [m_q.group(2).strip()]
-            question_last_page_index = line_page
-            current_question_start_y = getattr(raw, "y1", None)
+        if m_q and not parts:
             i += 1
             continue
 
@@ -1024,8 +1070,8 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
                 val = _choice_label_to_int(cur_opt)
                 if val:
                     current_ordinals.add(val)
-            remaining_parts: List[Tuple[str, str]] = []
-            for idx_label, body in parts:
+            remaining_parts: List[Tuple[str, str, Optional[int]]] = []
+            for idx_label, body, pos in parts:
                 cleaned_body = _clean_option_text(body)
                 ord_val = _choice_label_to_int(idx_label)
                 entry = None
@@ -1036,7 +1082,7 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
                             entry = candidate
                             break
                 if entry is None:
-                    remaining_parts.append((idx_label, body))
+                    remaining_parts.append((idx_label, body, pos))
                     continue
                 allow_backfill = False
                 entry_qnum = entry["qa"]["content"].get("question_number")
@@ -1062,7 +1108,7 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
                 ):
                     allow_backfill = True
                 if not allow_backfill:
-                    remaining_parts.append((idx_label, body))
+                    remaining_parts.append((idx_label, body, pos))
                     continue
                 option_text = _clean_option_text(body)
                 option = {"index": idx_label, "text": option_text}
@@ -1089,8 +1135,30 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
 
         if parts and qnum:
             flush_opt()
+            normalized_parts: List[Tuple[str, str, Optional[int]]] = []
+            trailing_segments: List[str] = []
+            for idx_label, body, pos in parts:
+                trimmed_body, trailing_qtext = _split_option_body_and_trailing_question(body)
+                normalized_parts.append((idx_label, trimmed_body, pos))
+                if trailing_qtext:
+                    trailing_segments.append(trailing_qtext)
+            if trailing_segments:
+                for seg in reversed(trailing_segments):
+                    injected = Line(
+                        seg,
+                        getattr(raw, "x0", 0.0),
+                        getattr(raw, "y0", 0.0),
+                        getattr(raw, "x1", 0.0),
+                        getattr(raw, "y1", 0.0),
+                        getattr(raw, "size", 10.0),
+                        getattr(raw, "font", ""),
+                        raw.column if hasattr(raw, "column") else getattr(raw, "column", "?"),
+                        page_index=getattr(raw, "page_index", -1),
+                    )
+                    lines.insert(i + 1, injected)
+            parts = normalized_parts
             if len(parts) > 1:
-                for idx_label, body in parts[:-1]:
+                for idx_label, body, _ in parts[:-1]:
                     cleaned_body = _clean_option_text(body)
                     opts.append({"index": idx_label, "text": cleaned_body})
                     opts_meta.append(
@@ -1102,7 +1170,7 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
                         }
                     )
                     question_last_page_index = line_page
-            last_idx, last_body = parts[-1]
+            last_idx, last_body, _ = parts[-1]
             cur_opt = last_idx
             cur_txt = [last_body.strip()] if last_body else []
             cur_opt_column = getattr(raw, "column", None)
@@ -1204,14 +1272,15 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
                     question_last_page_index = line_page
                 i += 1
                 continue
-            if stripped:
+            if stripped and not added_question_intro:
                 qtxt.append(stripped)
-                if line_page is not None:
-                    question_last_page_index = line_page
+            if line_page is not None:
+                question_last_page_index = line_page
             i += 1
             continue
         elif qnum:
-            qtxt.append(stripped)
+            if stripped and not added_question_intro:
+                qtxt.append(stripped)
             if line_page is not None:
                 question_last_page_index = line_page
         i += 1
