@@ -692,16 +692,34 @@ def split_inline_options(line_text: str) -> List[Tuple[str, str, Optional[int]]]
     candidates: List[Tuple[re.Match[str], str, Optional[int]]] = []
     for m in raw_matches:
         prev_char = s[m.start() - 1] if m.start() > 0 else ''
+        prev_prev = s[m.start() - 2] if m.start() > 1 else ''
+        prev_prev_prev = s[m.start() - 3] if m.start() > 2 else ''
+        next_char = s[m.end()] if m.end() < len(s) else ''
+
         if prev_char and not prev_char.isspace():
             if prev_char.isalnum() or prev_char in CIRCLED_CHOICE_CHARS or prev_char in {'.', ')'}:
                 continue
+
+        def _looks_like_decimal_context() -> bool:
+            if prev_char == '.' and prev_prev.isdigit():
+                return True
+            if prev_char.isspace() and prev_prev == '.' and prev_prev_prev.isdigit():
+                return True
+            return False
+
         if m.group('circ'):
             idx_label = m.group('circ')
         elif m.group('num_paren'):
             idx_label = m.group('num_paren')
         elif m.group('num_rparen'):
+            if _looks_like_decimal_context():
+                continue
             idx_label = m.group('num_rparen')
         elif m.group('num_dot'):
+            if _looks_like_decimal_context():
+                continue
+            if next_char and next_char in {')', ']', '›', '〉'} and prev_prev_prev.isdigit() and prev_prev == '.':
+                continue
             idx_label = m.group('num_dot')
         else:
             idx_label = m.group(0).strip()
@@ -738,7 +756,14 @@ def _split_option_body_and_trailing_question(body: str) -> Tuple[str, Optional[s
     remainder = text[start:].lstrip()
     if not remainder:
         return prefix, None
-    if not QNUM_RE.match(remainder):
+    m = QNUM_RE.match(remainder)
+    if not m:
+        return text, None
+    trailing_body = (m.group(2) or "").lstrip()
+    if not trailing_body:
+        return text, None
+    first_char = trailing_body[0]
+    if first_char.isdigit() or first_char in {')', ']', '}', '.', ',', '·'}:
         return text, None
     return prefix, remainder
 # --- end added ---
@@ -1002,6 +1027,14 @@ def _parse_qas_from_lines(lines: List[Line], subject: str, year: Optional[int], 
             remainder_clean = remainder.replace('\u00A0', ' ')
             remainder_clean = re.sub(r'\s{2,}', ' ', remainder_clean).strip()
             inline_parts = split_inline_options(remainder_clean)
+            if inline_parts:
+                filtered_inline_parts: List[Tuple[str, str, Optional[int]]] = []
+                for idx_label, body, pos in inline_parts:
+                    ord_val = _choice_label_to_int(idx_label)
+                    if pos == 0 and ((ord_val is not None and ord_val == qnum) or idx_label == str(qnum)):
+                        continue
+                    filtered_inline_parts.append((idx_label, body, pos))
+                inline_parts = filtered_inline_parts
             first_anchor_pos: Optional[int] = None
             for _, _, pos in inline_parts:
                 if pos is None:

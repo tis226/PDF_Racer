@@ -83,3 +83,22 @@ def test_option_trailing_question_number_split_into_new_question():
     assert "㉠" in text20 and "㉡" in text20
     labels20 = [opt["index"] for opt in q20["content"]["options"]]
     assert labels20 == ["①", "②", "③", "④"]
+
+
+def test_inline_numbers_inside_dates_do_not_spawn_fake_options():
+    lines = [
+        make_line("1. 형사소송법 적용범위", 0),
+        make_line("① 첫 번째 설명", 1),
+        make_line("② 형사소송법 부칙(법률 제8496호, 2007. 6. 1.) 제2조 설명", 2),
+        make_line("③ 세 번째 문장", 3),
+        make_line("④ 네 번째 문장", 4),
+    ]
+
+    qas = _parse_qas_from_lines(lines, subject="형사소송법", year=2020, target="default")
+
+    assert len(qas) == 1
+    q1 = qas[0]["content"]
+    option_labels = [opt["index"] for opt in q1["options"]]
+    assert option_labels == ["①", "②", "③", "④"]
+    assert all("2007. 6. 1." not in opt["index"] for opt in q1["options"])
+    assert any("2007. 6. 1." in opt["text"] for opt in q1["options"])
